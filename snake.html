@@ -1,0 +1,220 @@
+<!doctype html>
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Snake Game</title>
+	<style>
+	canvas {
+		display: block;
+		position: absolute;
+		border: 3px solid black;
+		margin: auto;
+		top: 0px;
+		right: 0px;
+		bottom: 0px;
+		left: 0px;
+	}
+	</style>
+</head>
+<body>
+<h2> Welcome to Impossible Snake Game!</h2>
+
+<script>
+
+var columns = 25, rows = 25;
+
+var Empty = 0, Snake = 1, Food = 3;
+
+var Left = 0, Up = 1, Right = 2, Down = 3;
+
+var left_key =37, up_key = 38, right_key = 39, down_key = 40;
+
+var grid = {
+
+	width: null,
+	height: null,
+	_grid: null,
+
+	init: function(defaultVal, column, row) {
+		this.width = column;
+		this.height = row;
+		this._grid = [];
+
+		for(var x = 0; x< column; x++) {
+			this._grid.push([]);
+			for(var y =0; y< row; y++) {
+				this._grid[x].push(defaultVal);
+			}
+		}
+
+	},
+
+	set: function(value, x, y) {
+		this._grid[x][y] = value;
+	},
+
+	get: function(x,y) {
+		return this._grid[x][y];
+	}
+
+}
+
+var snake = {
+
+	direction: null,
+	last: null,
+	_queue: null,
+
+	init: function(a, b, c) {
+		this.direction = a;
+
+		this._queue = [];
+		this.insert(b, c);
+	},
+
+	insert: function(x, y) {
+		this._queue.unshift({x:x, y:y});
+		this.last = this._queue[0];
+	},
+
+	remove: function(){
+		return this._queue.pop();
+	}
+}
+
+function setFood() {
+	var empty = [];
+	for (var x = 0; x < grid.width; x++){
+		for ( var y= 0; y < grid.height; y++) {
+			if (grid.get (x,y) === Empty) {
+				empty.push({x:x, y:y});
+			}
+		}
+	}
+	var randFoodOne = empty[Math.floor(Math.random()*empty.length)];
+	grid.set(Food, randFoodOne.x, randFoodOne.y);
+
+	var randFoodTwo = empty[Math.floor(Math.random()*empty.length)];
+	grid.set(Food, randFoodTwo.x, randFoodTwo.y);
+}
+
+//game objects
+
+var cnavas, context, keystate, frames, score;
+
+function main() {
+	canvas = document.createElement("canvas");
+	canvas.width = columns*20;
+	canvas.height = rows*20;
+	context = canvas.getContext("2d");
+	document.body.appendChild(canvas);
+
+	frames = 0;
+	keystate = {};
+	document.addEventListener("keydown", function(events){
+		keystate[events.keyCode] = true;
+	});
+	document.addEventListener("keyup", function(events) {
+		delete keystate[events.keyCode];
+	});
+
+	init();
+	loop();
+}
+
+function init() {
+	score = 0;
+	grid.init(Empty, columns, rows);
+
+	var sp = {x:Math.floor(columns/2), y:rows-1};
+	snake.init(Up, sp.x, sp.y);
+	grid.set(Snake, sp.x, sp.y);
+
+	setFood();
+}
+
+function loop() {
+	update();
+	draw();
+
+	window.requestAnimationFrame(loop, canvas);
+}
+
+function update() {
+	frames++;
+
+	if (keystate[left_key]) snake.direction = Left;
+	if (keystate[right_key]) snake.direction = Right;
+	if (keystate[up_key]) snake.direction = Up;
+	if (keystate[down_key]) snake.direction = Down;
+
+
+	if(frames%4 ===0) {
+		var new_y = snake.last.y;
+		var new_x = snake.last.x;
+
+		switch (snake.direction) {
+			case Left:
+				new_x--;
+				break;
+			case Down:
+				new_y++;
+				break;
+			case Up:
+				new_y--;
+				break;
+			case Right:
+				new_x++;
+				break;
+		}
+
+		if (0 > new_y || new_y > grid.height-1 || 0 > new_x || new_x > grid.width-1 || grid.get(new_x, new_y) === Snake) {
+
+			return init();
+		}
+
+		if (grid.get(new_x, new_y) === Food) {
+			var tail = {x:new_x, y:new_y};
+			score ++;
+			setFood();
+			// setFood();
+		} else {
+
+		var tail = snake.remove();
+		grid.set(Empty, tail.x, tail.y);
+		tail.y = new_y;
+		tail.x = new_x;
+	}
+		grid.set(Snake, tail.x, tail.y);
+		snake.insert(tail.x, tail.y);
+	}
+}
+
+function draw() {
+	var tw = canvas.width/grid.width;
+	var th = canvas.height/grid.height;
+
+	for (var x = 0; x < grid.width; x++){
+		for ( var y= 0; y < grid.height; y++) {
+			switch(grid.get(x, y)){
+				case Empty:
+					context.fillStyle = "#ffd480";
+					break;
+				case Snake:
+					context.fillStyle = "#00cc00";
+					break;
+				case Food:
+					context.fillStyle = "#F90137";
+					break;
+			}
+				context.fillRect(x*tw, y*th, tw, th);
+		}
+	}
+	context.fillStyle = "black";
+	context.fillText("Score: " + score, 14, canvas.height-10);
+}
+
+main();
+</script>
+</body>
+</html>
